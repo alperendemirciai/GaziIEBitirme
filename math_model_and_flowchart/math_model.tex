@@ -1,0 +1,251 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{mathtools}
+\usepackage[T1]{fontenc}
+
+% Colors
+\definecolor{headerblue}{RGB}{0,70,140}
+\definecolor{lightblue}{RGB}{220,235,250}
+\definecolor{sectiongreen}{RGB}{0,120,60}
+\definecolor{lightgreen}{RGB}{220,245,230}
+\definecolor{rowgray}{RGB}{245,245,245}
+
+% Section formatting
+\titleformat{\section}{\large\bfseries\color{headerblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{sectiongreen}}{}{0em}{}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\newcommand{\set}[1]{\mathcal{#1}}
+\newcommand{\param}[1]{\textit{#1}}
+
+\begin{document}
+
+% ── Title ──────────────────────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries\color{headerblue}
+    Notebook Manufacturing Scheduling\\[4pt]
+    Mathematical Model}\\[6pt]
+  {\normalsize Mixed-Integer Programming (MIP) Formulation}
+\end{center}
+
+\vspace{4pt}
+\hrule width\linewidth height 1.5pt
+\vspace{8pt}
+
+% ── Sets ───────────────────────────────────────────────────────────────────
+\section{Sets}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l l X}
+  \toprule
+  \rowcolor{lightblue}
+  Symbol & Name & Description \\
+  \midrule
+  $\mathcal{I}$ & Jobs      & All production orders ($|\mathcal{I}|=198$) \\
+  \rowcolor{rowgray}
+  $\mathcal{J}$ & Machines  & All machines in the factory ($|\mathcal{J}|=13$) \\
+  $\mathcal{R}$ & Routes    & All defined production routes ($|\mathcal{R}|=7$) \\
+  \rowcolor{rowgray}
+  $\mathcal{T}$ & Types     & Product type groups ($|\mathcal{T}|=7$) \\
+  \bottomrule
+\end{tabularx}
+
+\vspace{6pt}
+\textbf{Route–machine compatibility:} $\mathit{ar}(r,j)=1$ if route $r$ uses machine $j$.
+\quad\textbf{Job–route compatibility:} $\mathit{compat}(i,r)=1$ if job $i$ can use route $r$.
+
+% ── Parameters ─────────────────────────────────────────────────────────────
+\section{Parameters}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  \rowcolor{lightblue}
+  Symbol & Description \\
+  \midrule
+  $p(i,r,j)$ & Processing time of job $i$ on machine $j$ via route $r$ (min/unit) \\
+  \rowcolor{rowgray}
+  $s(i,i',j)$ & Setup time on machine $j$ when job $i'$ follows job $i$ (min) \\
+  $d(i)$      & Due date of job $i$ in minutes from today: $d(i) = \text{days} \times 1200$ \\
+  \rowcolor{rowgray}
+  $\mathit{qty}(i)$ & Order quantity of job $i$ (units) \\
+  $\mathit{cap}(j)$ & Daily capacity of machine $j$ (minutes) \\
+  \rowcolor{rowgray}
+  $\mathit{seq}(r,j)$ & Position of machine $j$ in the sequence of route $r$ \\
+  $M$         & Big-M constant ($M = 9{,}999{,}999$) \\
+  \bottomrule
+\end{tabularx}
+
+\vspace{4pt}
+\textbf{Processing time rule:}
+\begin{equation*}
+  p(i,r,j) =
+  \begin{cases}
+    p_{\text{cycle}}(i,r) / 60 & \text{if } j \text{ is the bottleneck machine of route } r \\
+    p_{\text{cycle}}(i,r) / 60 \times 0.25 & \text{otherwise (support operation)}
+  \end{cases}
+\end{equation*}
+
+\textbf{Setup time rule:}
+\begin{equation*}
+  s(i,i',j) =
+  \begin{cases}
+    40 \text{ min} & \text{if jobs } i,i' \text{ differ in ruling type and } j \in \{\text{Bielom1},\text{Bielom2}\} \\
+    0              & \text{otherwise}
+  \end{cases}
+\end{equation*}
+
+% ── Decision Variables ──────────────────────────────────────────────────────
+\section{Decision Variables}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l l X}
+  \toprule
+  \rowcolor{lightblue}
+  Variable & Domain & Meaning \\
+  \midrule
+  $x(i,r)$   & $\{0,1\}$ & $1$ if job $i$ is assigned to route $r$ \\
+  \rowcolor{rowgray}
+  $z(i,i',j)$ & $\{0,1\}$ & $1$ if job $i$ is processed \emph{before} job $i'$ on machine $j$ \\
+  $\delta(i)$ & $\{0,1\}$ & $1$ if job $i$ misses its due date \\
+  \rowcolor{rowgray}
+  $y(i,j)$   & $[0,1]$   & $1$ if job $i$ is processed on machine $j$ (derived via K2) \\
+  $C(i,j)$   & $\geq 0$  & Completion time of job $i$ on machine $j$ (min) \\
+  \rowcolor{rowgray}
+  $C_i(i)$   & $\geq 0$  & Final completion time of job $i$ (min) \\
+  $T_i(i)$   & $\geq 0$  & Tardiness of job $i$: $\max(0,\, C_i(i) - d(i))$ (min) \\
+  \rowcolor{rowgray}
+  $C_{\max}$ & $\geq 0$  & Makespan: latest completion time across all jobs (min) \\
+  \bottomrule
+\end{tabularx}
+
+% ── Objective Function ──────────────────────────────────────────────────────
+\section{Objective Function}
+
+\begin{mdframed}[backgroundcolor=lightblue, linecolor=headerblue, linewidth=1.5pt,
+                  innertopmargin=8pt, innerbottommargin=8pt]
+\begin{equation}
+  \min\; Z = \underbrace{\alpha \cdot C_{\max}}_{\text{makespan}}
+            + \underbrace{\beta \cdot \sum_{i \in \mathcal{I}} T_i(i)}_{\text{total tardiness}}
+            + \underbrace{\gamma \cdot \sum_{i \in \mathcal{I}} \delta(i)}_{\text{late job count}}
+\end{equation}
+\textbf{Implemented weights:}\quad
+$\alpha = 0.10$,\quad $\beta = 0.60$,\quad $\gamma = 0.30$,\quad
+subject to $\alpha + \beta + \gamma = 1$.
+\end{mdframed}
+
+\vspace{4pt}
+\begin{tabularx}{\linewidth}{>{\bfseries}l l X}
+  \toprule
+  \rowcolor{lightblue}
+  Term & Weight & Purpose \\
+  \midrule
+  $\alpha \cdot C_{\max}$ & 0.10 & Minimize total production span; earlier batch completion \\
+  \rowcolor{rowgray}
+  $\beta \cdot \sum T_i$  & 0.60 & Penalise cumulative lateness; critical for priority orders \\
+  $\gamma \cdot \sum \delta_i$ & 0.30 & Minimise number of customers affected by late delivery \\
+  \bottomrule
+\end{tabularx}
+
+% ── Constraints ─────────────────────────────────────────────────────────────
+\section{Constraints}
+
+\subsection{K1 — Unique Route Assignment}
+\begin{equation}
+  \sum_{r \in \mathcal{R}:\, \mathit{compat}(i,r)=1} x(i,r) = 1
+  \qquad \forall\, i \in \mathcal{I},\; \mathit{qty}(i)>0
+\end{equation}
+Every job is assigned to \emph{exactly one} compatible production route.
+
+\subsection{K2 — Route–Machine Consistency}
+\begin{equation}
+  y(i,j) = \sum_{\substack{r:\, \mathit{ar}(r,j)=1 \\ \mathit{compat}(i,r)=1}} x(i,r)
+  \qquad \forall\, i \in \mathcal{I},\; j \in \mathcal{J}
+\end{equation}
+Machine usage is fully determined by the route assignment; no independent choice.
+
+\subsection{K4 — Completion Time Lower Bound}
+\begin{equation}
+  C(i,j) \;\geq\; \sum_{\substack{r:\, \mathit{compat}(i,r)=1 \\ \mathit{ar}(r,j)=1}}
+    p(i,r,j)\cdot \mathit{qty}(i)\cdot x(i,r)
+  \qquad \forall\, i \in \mathcal{I},\; j \in \mathcal{J}
+\end{equation}
+Completion time on a machine is at least the job's own processing time on that machine.
+
+\subsection{K5 — No-Overlap (Disjunctive) Constraints}
+\begin{align}
+  C(i,j) &\geq C(i',j)
+    + \sum_{r} p(i,r,j)\cdot\mathit{qty}(i)\cdot x(i,r)
+    + \sum_{r} s(i',i,j)
+    - M\bigl(1 - z(i,i',j)\bigr)
+  &&\forall\, i \neq i',\; j \label{eq:K5a}\\[4pt]
+  C(i',j) &\geq C(i,j)
+    + \sum_{r} p(i',r,j)\cdot\mathit{qty}(i')\cdot x(i',r)
+    + \sum_{r} s(i,i',j)
+    - M\cdot z(i,i',j)
+  &&\forall\, i \neq i',\; j \label{eq:K5b}
+\end{align}
+Exactly one ordering is active per pair. When $z(i,i',j)=1$: job $i$ completes before $i'$ starts (Eq.~\ref{eq:K5a} active). When $z(i,i',j)=0$: job $i'$ goes first (Eq.~\ref{eq:K5b} active).
+
+\subsection{K6 — Job and Makespan Completion}
+\begin{align}
+  C_i(i) &\geq C(i,j) &&\forall\, i \in \mathcal{I},\; j : y(i,j)=1 \\
+  C_{\max} &\geq C_i(i) &&\forall\, i \in \mathcal{I}
+\end{align}
+A job is done when it clears its \emph{last} machine. Makespan is the latest over all jobs.
+
+\subsection{K7 — Tardiness Definition}
+\begin{align}
+  T_i(i) &\geq C_i(i) - d(i) &&\forall\, i \in \mathcal{I} \\
+  T_i(i) &\geq 0               &&\forall\, i \in \mathcal{I} \\
+  \delta(i) &\geq \frac{C_i(i) - d(i)}{M} &&\forall\, i \in \mathcal{I}
+\end{align}
+$T_i$ records minutes past deadline; $\delta(i)$ becomes 1 whenever any tardiness exists.
+
+\subsection{K8 — In-Route Machine Precedence}
+\begin{equation}
+  C(i,j') \geq C(i,j) + p(i,r,j)\cdot\mathit{qty}(i)\cdot x(i,r)
+\end{equation}
+for all $i,r,j,j'$ where $\mathit{compat}(i,r)=1$, $\mathit{ar}(r,j)=\mathit{ar}(r,j')=1$,
+and $\mathit{seq}(r,j')=\mathit{seq}(r,j)+1$.\\
+A job cannot start on the next machine in its route until it finishes on the current one.
+
+\subsection{K9 — Variable Domains}
+\begin{equation}
+  x(i,r),\;\delta(i),\;z(i,i',j) \in \{0,1\};
+  \qquad
+  y(i,j),\;C(i,j),\;C_i(i),\;T_i(i),\;C_{\max} \geq 0
+\end{equation}
+
+% ── Solver Settings ─────────────────────────────────────────────────────────
+\section{Solver Configuration (CPLEX)}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  \rowcolor{lightblue}
+  Parameter & Value \\
+  \midrule
+  Solver         & CPLEX (via GAMS) \\
+  \rowcolor{rowgray}
+  Threads        & 4 \\
+  MIP emphasis   & 1 (feasibility-first) \\
+  \rowcolor{rowgray}
+  Optimality gap & 10\% (\texttt{epgap = 0.10}); final tolerance 5\% (\texttt{optcr = 0.05}) \\
+  Time limit     & 3\,600 s (CPLEX) / 7\,200 s (GAMS) \\
+  \rowcolor{rowgray}
+  $C_{\max}$ upper bound & 2\,500\,000 min \\
+  Working day    & 1\,200 min (20 hours); used to convert calendar days to minutes \\
+  \bottomrule
+\end{tabularx}
+
+\end{document}
