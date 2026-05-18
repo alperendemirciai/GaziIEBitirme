@@ -1,0 +1,16 @@
+Data validation report -- generated 2026-05-18T23:07:11
+Source file: siparisturu_v6.gms
+Today's date: 2026-05-18
+Expected jobs: 198
+========================================================================
+[PASS] All 198 jobs (I01–I198) are declared in Set i
+[PASS] Every job has qty > 0
+[PASS] All delivery dates are in the future relative to today (2026-05-18)
+[PASS] No job appears in more than one product type set
+[PASS] Every job appears in at least one product type set
+[ERROR] Jobs in multiple ruling sets  --  I196: ['i_cizgili', 'i_duz']; I198: ['i_cizgili', 'i_duz']
+[ERROR] Jobs with NO ruling set (2)  --  I96, I98
+[WARNING] Machines that may need many days to clear backlog (total load > 1.5 × daily capacity)  --  Bielom1: load=143,081 min vs cap=4800 min/day (ratio=29.81x days); PolarBicak: load=143,081 min vs cap=1200 min/day (ratio=119.23x days); Kugler: load=142,885 min vs cap=1200 min/day (ratio=119.07x days); Plasticol: load=530,936 min vs cap=1200 min/day (ratio=442.45x days); Shrink2: load=143,081 min vs cap=2400 min/day (ratio=59.62x days); MSK: load=195,733 min vs cap=2400 min/day (ratio=81.56x days); ManSpiral: load=17,839 min vs cap=1200 min/day (ratio=14.87x days); Autobind: load=22,766 min vs cap=1200 min/day (ratio=18.97x days); Bielom2: load=210,609 min vs cap=4800 min/day (ratio=43.88x days); Shrink1: load=52,652 min vs cap=2400 min/day (ratio=21.94x days)
+========================================================================
+OVERALL: ERROR (2 critical errors found)
+WARNINGS: 1

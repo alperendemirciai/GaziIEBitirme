@@ -1,0 +1,47 @@
+Orders summary -- generated 2026-05-18T23:07:11
+Source file: siparisturu_v6.gms
+========================================================================
+Total jobs: 198
+
+-- Jobs by binding type --
+  Plastik Spiral                   105
+  Tel Dikiş                        69
+  Double Metal Spiral              15
+  Manuel Spiral                    8
+  İplik Dikiş                      1
+
+-- Jobs by ruling type --
+  Düz                              83
+  Kareli                           62
+  Çizgili                          53
+
+-- Jobs by delivery date group --
+  2027-05-11  11
+  2027-05-15  45
+  2027-05-18  66
+  2027-05-25  12
+  2027-07-10  19
+  2027-07-20  26
+  2027-08-01  19
+
+-- Jobs by customer --
+  ADEL                             45
+  Tehelan                          36
+  IN UFFICIO                       30
+  A 101                            23
+  ŞOK                              19
+  MİGROS                           19
+  SUN                              12
+  Adaconi                          6
+  Ri Plast                         5
+  BİM                              3
+
+-- Top 5 jobs by quantity --
+  I43    qty=    578040  BİM-Plastik Spiral-96YP-A5-Çizgili
+  I35    qty=    557712  A 101-Tel Dikiş-60YP-A4-Çizgili
+  I36    qty=    507280  A 101-Tel Dikiş-60YP-A4-Çizgili
+  I33    qty=    448080  A 101-Tel Dikiş-60YP-A4-Çizgili
+  I139   qty=    442872  A 101-Tel Dikiş-30YP-25x32-Düz
+
+-- Earliest delivery date: 2027-05-11 --
+   11 job(s): I188, I189, I190, I191, I192, I193, I194, I195, I196, I197, I198
